@@ -8,6 +8,7 @@ from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import HTMLResponse, JSONResponse
 from starlette.staticfiles import StaticFiles
+import socket
 
 export_file_url = 'https://www.dropbox.com/s/5oqef5t4p86dm0m/export.pkl?dl=1'
 export_file_name = 'export.pkl'
@@ -17,12 +18,14 @@ path = Path(__file__).parent
 
 app = Starlette()
 app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_headers=['X-Requested-With', 'Content-Type'])
+
 app.mount('/static', StaticFiles(directory='app/static'))
 
 
 async def download_file(url, dest):
     if dest.exists(): return
-    async with aiohttp.ClientSession() as session:
+    conn = aiohttp.TCPConnector(family=socket.AF_INET, verify_ssl=False,)
+    async with aiohttp.ClientSession(connector=conn) as session:
         async with session.get(url) as response:
             data = await response.read()
             with open(dest, 'wb') as f:
